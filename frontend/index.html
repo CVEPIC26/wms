@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WMS - CV Edukasi Pratama Insan Cemerlang</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="app-header">
+    <h1>Warehouse Management System</h1>
+    <p class="app-subtitle">CV Edukasi Pratama Insan Cemerlang</p>
+  </header>
+
+  <nav class="app-nav">
+    <ul>
+      <li><a href="#" data-module="dashboard" class="active">Dashboard</a></li>
+      <li><a href="#" data-module="receiving">Receiving + QC</a></li>
+      <li><a href="#" data-module="persediaan">Persediaan</a></li>
+      <li><a href="#" data-module="stock-keluar">Stock Keluar</a></li>
+      <li><a href="#" data-module="stock-opname">Stock Opname</a></li>
+    </ul>
+  </nav>
+
+  <main class="app-main">
+    <section id="module-dashboard" class="module active">
+      <h2>Dashboard</h2>
+      <p>Ringkasan operasional gudang akan ditampilkan di sini.</p>
+    </section>
+
+    <section id="module-receiving" class="module">
+      <h2>Receiving + QC</h2>
+      <p>Modul penerimaan barang dari supplier sekaligus pemeriksaan QC ringan (scan/input SKU, pencatatan qty, qty reject, dan qty lolos QC sebagai stock in).</p>
+      <!-- Form scan/input SKU dan pencatatan qty akan diimplementasikan pada tahap berikutnya -->
+    </section>
+
+    <section id="module-persediaan" class="module">
+      <h2>Persediaan</h2>
+      <p>Tampilan stock persediaan hasil stock in (qty lolos QC) dikurangi stock keluar.</p>
+    </section>
+
+    <section id="module-stock-keluar" class="module">
+      <h2>Stock Keluar / Pemesanan</h2>
+      <p>Stock keluar bersumber dari data penyiapan di Google Spreadsheet (bukan input via Web App). Loading/penyiapan tidak mengurangi stock lagi.</p>
+    </section>
+
+    <section id="module-stock-opname" class="module">
+      <h2>Stock Opname</h2>
+      <p>Modul stock opname dengan scan/input SKU akan diimplementasikan pada tahap berikutnya.</p>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <p>&copy; CV Edukasi Pratama Insan Cemerlang</p>
+  </footer>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
