@@ -42,9 +42,9 @@ MASTER_SKU ──< RECEIVING_DETAIL >── RECEIVING ── USERS
     │
     ├──< STOCK (saldo per SKU)
     │
-    └──< STOCK_MOVEMENT ── reference_id ──> RECEIVING_DETAIL (STOCK_IN)
-                 │                    └──> PENYIAPAN (STOCK_OUT, eksternal)
-                 │                    └──> STOCK_OPNAME_DETAIL (STOCK_ADJUSTMENT)
+    └──< STOCK_MOVEMENT ── source + source_id ──> RECEIVING_DETAIL (STOCK_IN)
+                 │                             └──> PENYIAPAN (STOCK_OUT, eksternal)
+                 │                             └──> STOCK_OPNAME_DETAIL (STOCK_ADJUSTMENT)
                  │
 MASTER_SKU ──< STOCK_OPNAME_DETAIL >── STOCK_OPNAME ── USERS
 
@@ -53,7 +53,7 @@ PENYIAPAN (eksternal) ──API──> STOCK_OUT ──> STOCK (berkurang)
 ```
 
 Relasi antar sheet dijaga lewat kolom kunci (`SKU`, `receiving_id`,
-`opname_id`, `reference_id`) — bukan foreign key database.
+`opname_id`, `source`, `source_id`) — bukan foreign key database.
 
 ---
 
@@ -145,14 +145,20 @@ Tidak perlu QC per unit.
 
 ## E. STOCK
 
-Saldo stok **saat ini** per SKU. Satu baris per SKU. Diupdate oleh
-setiap transaksi yang tercatat di `STOCK_MOVEMENT`.
+Saldo stok **saat ini** per SKU. Satu baris per SKU.
+
+> **Penting:** `STOCK` adalah saldo yang **dikelola sistem** dan
+> **tidak boleh diedit manual oleh operator**. Setiap perubahan
+> `qty_stock` hanya boleh terjadi melalui transaksi yang tercatat di
+> `STOCK_MOVEMENT` (via API/sistem). Jika ada ketidaksesuaian stok,
+> koreksinya dilakukan lewat **Stock Opname → STOCK_ADJUSTMENT**,
+> bukan dengan mengedit sheet ini langsung.
 
 | Kolom | Tipe | Wajib | Keterangan |
 |-------|------|-------|------------|
 | `sku` | text | ✅ | Referensi `MASTER_SKU.sku`, satu baris per SKU |
 | `nama_produk` | text | ✅ | Nama produk |
-| `qty_stock` | number | ✅ | Saldo stok terkini |
+| `qty_stock` | number | ✅ | Saldo stok terkini (dikelola sistem, tidak diedit manual) |
 | `updated_at` | datetime | ✅ | Waktu update terakhir |
 
 `qty_stock` selalu konsisten dengan histori:
@@ -165,8 +171,13 @@ qty_stock = Σ STOCK_IN − Σ STOCK_OUT ± Σ STOCK_ADJUSTMENT
 
 ## F. STOCK_MOVEMENT
 
-Histori **seluruh** perubahan stok. Bersifat append-only
-(tidak diedit/dihapus).
+Histori **seluruh** perubahan stok.
+
+> **Penting:** `STOCK_MOVEMENT` adalah histori transaksi yang bersifat
+> **append-only**. Baris yang sudah tercatat **tidak boleh diedit dan
+> tidak boleh dihapus** oleh siapa pun, termasuk admin. Koreksi
+> kesalahan dilakukan dengan menambahkan movement baru (misal
+> `STOCK_ADJUSTMENT`), bukan mengubah histori.
 
 | Kolom | Tipe | Wajib | Keterangan |
 |-------|------|-------|------------|
@@ -175,7 +186,8 @@ Histori **seluruh** perubahan stok. Bersifat append-only
 | `sku` | text | ✅ | Referensi `MASTER_SKU.sku` |
 | `tipe_transaksi` | text | ✅ | `STOCK_IN` / `STOCK_OUT` / `STOCK_ADJUSTMENT` |
 | `qty` | number | ✅ | Jumlah perubahan (selalu positif; arah ditentukan `tipe_transaksi`) |
-| `reference_id` | text | ✅ | ID sumber transaksi (unik per transaksi, lihat idempotency) |
+| `source` | text | ✅ | Asal transaksi: `RECEIVING` / `PENYIAPAN` / `STOCK_OPNAME` |
+| `source_id` | text | ✅ | Identitas unik transaksi **per SKU** pada sumbernya (lihat idempotency) |
 | `keterangan` | text | opsional | Keterangan tambahan |
 | `user_email` | text | ✅ | Email pelaksana |
 | `created_at` | datetime | ✅ | Waktu record dibuat |
@@ -193,11 +205,31 @@ Histori **seluruh** perubahan stok. Bersifat append-only
 - Stock Out **berasal dari source data `PENYIAPAN`**.
 - Web App **tidak** digunakan untuk menginput Penyiapan.
 - API membaca `PENYIAPAN` dan membuat movement `STOCK_OUT`.
-- Menggunakan sistem **idempotency**: `reference_id` diambil dari ID
-  unik baris sumber di `PENYIAPAN` (misal `PNY-000123`).
+- Menggunakan sistem **idempotency** dengan kombinasi
+  `source` + `source_id` + `sku` + `tipe_transaksi`.
 - Sebelum membuat movement, API memeriksa `STOCK_MOVEMENT` — jika
-  `reference_id` + `tipe_transaksi = STOCK_OUT` sudah ada, transaksi
-  **dilewati** (tidak diproses dua kali).
+  kombinasi tersebut sudah ada, transaksi **dilewati** (tidak diproses
+  dua kali).
+
+#### Aturan source dan source_id
+
+- `source` menunjukkan asal transaksi. Untuk Stock Out, nilainya
+  selalu `PENYIAPAN`.
+- `source_id` adalah **identitas transaksi per SKU** pada data sumber,
+  bukan sekadar nomor dokumen.
+- **Jangan** menetapkan `source_id` hanya berdasarkan Nomor PO (atau
+  nomor dokumen penyiapan): satu dokumen/PO dapat memuat **banyak SKU**,
+  dan setiap SKU harus dapat diidentifikasi **secara unik** agar
+  idempotency bekerja per SKU dan mencegah *double processing*.
+  Secara konsep, identitas per SKU dapat dibentuk dari kombinasi
+  nomor dokumen + SKU (atau identitas baris per SKU yang tersedia di
+  sheet sumber).
+- **Format final `source_id` belum ditetapkan** — akan diputuskan
+  setelah struktur asli sheet `PENYIAPAN` dianalisis. Yang dipakai
+  harus identitas yang stabil dan unik per SKU per transaksi sumber.
+- Untuk tipe lain: `source = RECEIVING` dengan `source_id` merujuk ke
+  transaksi receiving per SKU, dan `source = STOCK_OPNAME` dengan
+  `source_id` merujuk ke opname per SKU.
 
 ---
 
@@ -211,7 +243,8 @@ Ketika transaksi `STOCK_OUT` diakui/diterima oleh sistem:
 
 **Loading** (proses penyiapan barang ke outlet) hanya proses operasional
 dari data `PENYIAPAN` dan **tidak boleh melakukan pengurangan stok kedua
-kali** — idempotency pada `reference_id` menjamin hal ini.
+kali** — idempotency pada kombinasi `source` + `source_id` + `sku`
+menjamin hal ini.
 
 ---
 
@@ -247,9 +280,16 @@ Stock opname dilakukan melalui Web App dengan scan/input SKU.
 difference_qty = physical_qty - system_qty
 ```
 
+> **Snapshot `system_qty`:** `system_qty` adalah **snapshot** nilai
+> `STOCK.qty_stock` **pada saat SKU dicatat dalam sesi opname**.
+> Setelah snapshot dibuat, nilai `system_qty` **tidak berubah**
+> walaupun stok berubah setelahnya (misal ada receiving atau stock out
+> baru). Selisih opname selalu dihitung terhadap snapshot ini.
+
 Jika opname menghasilkan selisih dan **disetujui**, dibuat
-`STOCK_MOVEMENT` bertipe `STOCK_ADJUSTMENT` dengan
-`reference_id = opname_id + sku`, dan `STOCK.qty_stock` disesuaikan.
+`STOCK_MOVEMENT` bertipe `STOCK_ADJUSTMENT` dengan `source = STOCK_OPNAME`
+dan `source_id` merujuk ke opname per SKU (secara konsep kombinasi
+`opname_id` + `sku`), lalu `STOCK.qty_stock` disesuaikan oleh sistem.
 
 ---
 
@@ -292,9 +332,9 @@ Supplier `PT Sumber Buku` mengirim PO `PO-2026-081`, diterima operator
 
 **STOCK_MOVEMENT**
 
-| movement_id | tanggal | sku | tipe_transaksi | qty | reference_id | keterangan | user_email | created_at |
-|---|---|---|---|---|---|---|---|---|
-| MV-20260819-0001 | 2026-08-19 | BK-001 | STOCK_IN | 97 | RCV-20260819-001 | Receiving PO-2026-081 | budi@cvepic.id | 2026-08-19 09:20 |
+| movement_id | tanggal | sku | tipe_transaksi | qty | source | source_id | keterangan | user_email | created_at |
+|---|---|---|---|---|---|---|---|---|---|
+| MV-20260819-0001 | 2026-08-19 | BK-001 | STOCK_IN | 97 | RECEIVING | RCV-20260819-001 | Receiving PO-2026-081 | budi@cvepic.id | 2026-08-19 09:20 |
 
 **STOCK** (misal saldo sebelumnya 0)
 
@@ -311,9 +351,9 @@ mengakuinya sebagai `STOCK_OUT`. Loading ke outlet dilakukan setelahnya
 
 **STOCK_MOVEMENT**
 
-| movement_id | tanggal | sku | tipe_transaksi | qty | reference_id | keterangan | user_email | created_at |
-|---|---|---|---|---|---|---|---|---|
-| MV-20260819-0002 | 2026-08-19 | BK-001 | STOCK_OUT | 20 | PNY-000123 | Penyiapan Outlet Bandung (accrual) | system | 2026-08-19 13:05 |
+| movement_id | tanggal | sku | tipe_transaksi | qty | source | source_id | keterangan | user_email | created_at |
+|---|---|---|---|---|---|---|---|---|---|
+| MV-20260819-0002 | 2026-08-19 | BK-001 | STOCK_OUT | 20 | PENYIAPAN | PNY-000123 + BK-001 | Penyiapan Outlet Bandung (accrual) | system | 2026-08-19 13:05 |
 
 **STOCK**
 
@@ -321,9 +361,14 @@ mengakuinya sebagai `STOCK_OUT`. Loading ke outlet dilakukan setelahnya
 |---|---|---|---|
 | BK-001 | Buku Tematik Kelas 1 | 77 | 2026-08-19 13:05 |
 
-Jika API membaca ulang `PENYIAPAN` dan menemukan `PNY-000123` lagi,
-pemeriksaan idempotency menemukan `reference_id = PNY-000123` sudah ada
-di `STOCK_MOVEMENT` → baris **dilewati**, stok tidak berkurang dua kali.
+Jika API membaca ulang `PENYIAPAN` dan menemukan baris penyiapan
+`PNY-000123` untuk SKU `BK-001` lagi, pemeriksaan idempotency menemukan
+kombinasi `source = PENYIAPAN` + `source_id` (identitas `PNY-000123`
+untuk SKU `BK-001`) + `tipe_transaksi = STOCK_OUT` sudah ada di
+`STOCK_MOVEMENT` → baris **dilewati**, stok tidak berkurang dua kali.
+Jika dokumen penyiapan yang sama memuat SKU lain (misal `MD-010`), SKU
+tersebut memiliki identitas per SKU sendiri dan diproses terpisah —
+satu dokumen tidak memblokir SKU lain.
 
 ---
 
@@ -343,10 +388,12 @@ Sesuai ketentuan, desain ini sengaja **tidak** memuat:
 
 - Satu sheet per tabel, baris pertama = nama kolom persis seperti
   dokumentasi ini.
-- Kolom ID (`receiving_id`, `opname_id`, `movement_id`, `reference_id`)
+- Kolom ID (`receiving_id`, `opname_id`, `movement_id`, `source_id`)
   diisi teks agar tidak diubah format oleh Spreadsheet.
 - Kolom tanggal memakai format konsisten `YYYY-MM-DD` dan
   `created_at`/`updated_at` memakai `YYYY-MM-DD HH:MM`.
 - Nilai boolean memakai teks `YA`/`TIDAK` agar mudah difilter.
-- `STOCK_MOVEMENT` bersifat append-only: jangan mengedit/menghapus
-  baris yang sudah ada.
+- `STOCK_MOVEMENT` bersifat **append-only**: jangan mengedit/menghapus
+  baris yang sudah ada; koreksi dilakukan lewat movement baru.
+- `STOCK` dikelola sistem: operator tidak mengedit sheet ini secara
+  manual; koreksi stok hanya lewat Stock Opname → `STOCK_ADJUSTMENT`.
