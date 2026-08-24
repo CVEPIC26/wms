@@ -46,7 +46,27 @@ var CONFIG = {
     STOCK_OPNAME: 'STOCK_OPNAME'
   },
 
-  AKTIF: 'YA'
+  AKTIF: 'YA',
+
+  // Sumber data eksternal PENYIAPAN (bukan sheet database WMS utama).
+  // PENYIAPAN_SPREADSHEET_ID dikosongkan jika PENYIAPAN berada di
+  // spreadsheet yang sama dengan database WMS.
+  // Header di bawah adalah kontrak kolom yang dibaca oleh API —
+  // sesuaikan nilainya dengan header aktual sheet PENYIAPAN
+  // (nama sheet & header di luar 8 sheet database, tidak diubah oleh WMS).
+  PENYIAPAN: {
+    SPREADSHEET_ID: '',
+    SHEET_NAME: 'PENYIAPAN',
+    HEADERS: {
+      ID: 'penyiapan_id',   // ID transaksi stabil (bukan nomor baris)
+      SKU: 'sku',
+      QTY: 'qty',
+      STATUS: 'status'      // opsional; kolom ini boleh tidak ada
+    },
+    // Nilai status yang berarti siap diproses (dibandingkan
+    // case-insensitive). Hanya dipakai jika kolom status ada.
+    STATUS_SIAP: ['SIAP', 'READY', 'MENUNGGU']
+  }
 };
 
 function getSpreadsheet_() {

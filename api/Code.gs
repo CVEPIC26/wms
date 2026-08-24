@@ -9,9 +9,12 @@
  *   GET  /exec?action=stock_get&sku=...    (saldo satu SKU)
  *   GET  /exec?action=stock_list           (seluruh saldo STOCK)
  *   GET  /exec?action=stock_card&sku=...   (kartu stok / histori movement SKU)
+ *   GET  /exec?action=preparation_list     (transaksi PENYIAPAN siap diproses)
  *   POST /exec?action=receiving_create  (buat DRAFT)
  *   POST /exec?action=receiving_submit  (DRAFT → MENUNGGU_VERIFIKASI)
  *   POST /exec?action=receiving_verify  (MENUNGGU_VERIFIKASI → TERVERIFIKASI + STOCK_IN)
+ *   POST /exec?action=stockout_process  (satu transaksi PENYIAPAN → STOCK_OUT)
+ *   POST /exec?action=stockout_batch    (seluruh PENYIAPAN siap → STOCK_OUT)
  */
 
 function doGet(e) {
@@ -44,6 +47,10 @@ function doGet(e) {
           items: getStockCard_(skuCard)
         });
       }
+      case 'preparation_list':
+        return successResponse_('Transaksi PENYIAPAN siap diproses', {
+          items: getPreparationData_()
+        });
       default:
         return errorResponse_('Action tidak dikenal: ' + action, 'UNKNOWN_ACTION');
     }
@@ -64,6 +71,12 @@ function doPost(e) {
         return successResponse_('Receiving disubmit, menunggu verifikasi', receivingSubmit_(payload));
       case 'receiving_verify':
         return successResponse_('Receiving terverifikasi, STOCK_IN diproses', receivingVerify_(payload));
+      case 'stockout_process':
+        return successResponse_('STOCK_OUT penyiapan diproses',
+          processPreparationStockOut_(payload.penyiapan_id, payload.user_email));
+      case 'stockout_batch':
+        return successResponse_('Batch STOCK_OUT penyiapan diproses',
+          processPreparationBatch_(payload.user_email));
       default:
         return errorResponse_('Action tidak dikenal: ' + action, 'UNKNOWN_ACTION');
     }
