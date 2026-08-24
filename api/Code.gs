@@ -10,11 +10,18 @@
  *   GET  /exec?action=stock_list           (seluruh saldo STOCK)
  *   GET  /exec?action=stock_card&sku=...   (kartu stok / histori movement SKU)
  *   GET  /exec?action=preparation_list     (transaksi PENYIAPAN siap diproses)
+ *   GET  /exec?action=opname_sku&opname_id=...&sku=...  (lookup SKU untuk scan)
+ *   GET  /exec?action=opname_get&opname_id=...          (header + detail opname)
+ *   GET  /exec?action=opname_list                       (daftar opname)
  *   POST /exec?action=receiving_create  (buat DRAFT)
  *   POST /exec?action=receiving_submit  (DRAFT → MENUNGGU_VERIFIKASI)
  *   POST /exec?action=receiving_verify  (MENUNGGU_VERIFIKASI → TERVERIFIKASI + STOCK_IN)
  *   POST /exec?action=stockout_process  (satu transaksi PENYIAPAN → STOCK_OUT)
  *   POST /exec?action=stockout_batch    (seluruh PENYIAPAN siap → STOCK_OUT)
+ *   POST /exec?action=opname_create     (buat opname DRAFT)
+ *   POST /exec?action=opname_add_detail (tambah detail, snapshot system_qty)
+ *   POST /exec?action=opname_submit     (DRAFT → MENUNGGU_VERIFIKASI)
+ *   POST /exec?action=opname_verify     (MENUNGGU_VERIFIKASI → DISETUJUI + ADJUSTMENT)
  */
 
 function doGet(e) {
@@ -51,6 +58,13 @@ function doGet(e) {
         return successResponse_('Transaksi PENYIAPAN siap diproses', {
           items: getPreparationData_()
         });
+      case 'opname_sku':
+        return successResponse_('Lookup SKU opname',
+          opnameSkuLookup_(e.parameter.opname_id, e.parameter.sku));
+      case 'opname_get':
+        return successResponse_('Detail opname', opnameGet_(e.parameter.opname_id));
+      case 'opname_list':
+        return successResponse_('Daftar opname', { items: opnameList_() });
       default:
         return errorResponse_('Action tidak dikenal: ' + action, 'UNKNOWN_ACTION');
     }
@@ -77,6 +91,14 @@ function doPost(e) {
       case 'stockout_batch':
         return successResponse_('Batch STOCK_OUT penyiapan diproses',
           processPreparationBatch_(payload.user_email));
+      case 'opname_create':
+        return successResponse_('Opname dibuat (DRAFT)', opnameCreate_(payload));
+      case 'opname_add_detail':
+        return successResponse_('Detail opname ditambahkan', opnameAddDetail_(payload));
+      case 'opname_submit':
+        return successResponse_('Opname disubmit, menunggu verifikasi', opnameSubmit_(payload));
+      case 'opname_verify':
+        return successResponse_('Opname diverifikasi, adjustment diproses', opnameVerify_(payload));
       default:
         return errorResponse_('Action tidak dikenal: ' + action, 'UNKNOWN_ACTION');
     }

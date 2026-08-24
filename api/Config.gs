@@ -16,7 +16,9 @@ var CONFIG = {
     RECEIVING: 'RECEIVING',
     RECEIVING_DETAIL: 'RECEIVING_DETAIL',
     STOCK: 'STOCK',
-    STOCK_MOVEMENT: 'STOCK_MOVEMENT'
+    STOCK_MOVEMENT: 'STOCK_MOVEMENT',
+    STOCK_OPNAME: 'STOCK_OPNAME',
+    STOCK_OPNAME_DETAIL: 'STOCK_OPNAME_DETAIL'
   },
 
   HEADERS: {
@@ -25,13 +27,16 @@ var CONFIG = {
     RECEIVING: ['receiving_id', 'tanggal', 'supplier', 'nomor_po', 'user_email', 'status', 'created_at'],
     RECEIVING_DETAIL: ['receiving_id', 'sku', 'nama_produk', 'qty_diterima', 'qty_reject', 'qty_diterima_qc', 'alasan_reject', 'catatan'],
     STOCK: ['sku', 'nama_produk', 'qty_stock', 'updated_at'],
-    STOCK_MOVEMENT: ['movement_id', 'tanggal', 'sku', 'tipe_transaksi', 'qty', 'source', 'source_id', 'keterangan', 'user_email', 'created_at']
+    STOCK_MOVEMENT: ['movement_id', 'tanggal', 'sku', 'tipe_transaksi', 'qty', 'source', 'source_id', 'keterangan', 'user_email', 'created_at'],
+    STOCK_OPNAME: ['opname_id', 'tanggal', 'lokasi', 'user_email', 'status', 'created_at'],
+    STOCK_OPNAME_DETAIL: ['opname_id', 'sku', 'system_qty', 'physical_qty', 'difference_qty', 'notes']
   },
 
   STATUS: {
     DRAFT: 'DRAFT',
     MENUNGGU_VERIFIKASI: 'MENUNGGU_VERIFIKASI',
-    TERVERIFIKASI: 'TERVERIFIKASI'
+    TERVERIFIKASI: 'TERVERIFIKASI',
+    DISETUJUI: 'DISETUJUI'
   },
 
   MOVEMENT_TYPE: {
