@@ -13,6 +13,8 @@
  *   GET  /exec?action=opname_sku&opname_id=...&sku=...  (lookup SKU untuk scan)
  *   GET  /exec?action=opname_get&opname_id=...          (header + detail opname)
  *   GET  /exec?action=opname_list                       (daftar opname)
+ *   GET  /exec?action=adjustment_get&adjustment_id=...  (satu adjustment + audit)
+ *   GET  /exec?action=adjustment_list                   (daftar adjustment)
  *   POST /exec?action=receiving_create  (buat DRAFT)
  *   POST /exec?action=receiving_submit  (DRAFT → MENUNGGU_VERIFIKASI)
  *   POST /exec?action=receiving_verify  (MENUNGGU_VERIFIKASI → TERVERIFIKASI + STOCK_IN)
@@ -22,6 +24,9 @@
  *   POST /exec?action=opname_add_detail (tambah detail, snapshot system_qty)
  *   POST /exec?action=opname_submit     (DRAFT → MENUNGGU_VERIFIKASI)
  *   POST /exec?action=opname_verify     (MENUNGGU_VERIFIKASI → DISETUJUI + ADJUSTMENT)
+ *   POST /exec?action=adjustment_create (buat adjustment DRAFT)
+ *   POST /exec?action=adjustment_submit (DRAFT → MENUNGGU_VERIFIKASI)
+ *   POST /exec?action=adjustment_verify (MENUNGGU_VERIFIKASI → DISETUJUI + ADJUSTMENT)
  */
 
 function doGet(e) {
@@ -65,6 +70,10 @@ function doGet(e) {
         return successResponse_('Detail opname', opnameGet_(e.parameter.opname_id));
       case 'opname_list':
         return successResponse_('Daftar opname', { items: opnameList_() });
+      case 'adjustment_get':
+        return successResponse_('Detail adjustment', adjustmentGet_(e.parameter.adjustment_id));
+      case 'adjustment_list':
+        return successResponse_('Daftar adjustment', { items: adjustmentList_() });
       default:
         return errorResponse_('Action tidak dikenal: ' + action, 'UNKNOWN_ACTION');
     }
@@ -99,6 +108,12 @@ function doPost(e) {
         return successResponse_('Opname disubmit, menunggu verifikasi', opnameSubmit_(payload));
       case 'opname_verify':
         return successResponse_('Opname diverifikasi, adjustment diproses', opnameVerify_(payload));
+      case 'adjustment_create':
+        return successResponse_('Adjustment dibuat (DRAFT)', adjustmentCreate_(payload));
+      case 'adjustment_submit':
+        return successResponse_('Adjustment disubmit, menunggu verifikasi', adjustmentSubmit_(payload));
+      case 'adjustment_verify':
+        return successResponse_('Adjustment diverifikasi, stok disesuaikan', adjustmentVerify_(payload));
       default:
         return errorResponse_('Action tidak dikenal: ' + action, 'UNKNOWN_ACTION');
     }

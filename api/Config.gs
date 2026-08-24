@@ -18,7 +18,8 @@ var CONFIG = {
     STOCK: 'STOCK',
     STOCK_MOVEMENT: 'STOCK_MOVEMENT',
     STOCK_OPNAME: 'STOCK_OPNAME',
-    STOCK_OPNAME_DETAIL: 'STOCK_OPNAME_DETAIL'
+    STOCK_OPNAME_DETAIL: 'STOCK_OPNAME_DETAIL',
+    STOCK_ADJUSTMENT: 'STOCK_ADJUSTMENT'
   },
 
   HEADERS: {
@@ -29,7 +30,8 @@ var CONFIG = {
     STOCK: ['sku', 'nama_produk', 'qty_stock', 'updated_at'],
     STOCK_MOVEMENT: ['movement_id', 'tanggal', 'sku', 'tipe_transaksi', 'qty', 'source', 'source_id', 'keterangan', 'user_email', 'created_at'],
     STOCK_OPNAME: ['opname_id', 'tanggal', 'lokasi', 'user_email', 'status', 'created_at'],
-    STOCK_OPNAME_DETAIL: ['opname_id', 'sku', 'system_qty', 'physical_qty', 'difference_qty', 'notes']
+    STOCK_OPNAME_DETAIL: ['opname_id', 'sku', 'system_qty', 'physical_qty', 'difference_qty', 'notes'],
+    STOCK_ADJUSTMENT: ['adjustment_id', 'tanggal', 'sku', 'nama_produk', 'qty_adjustment', 'alasan', 'user_email', 'status', 'verified_by', 'created_at', 'verified_at']
   },
 
   STATUS: {
@@ -48,7 +50,14 @@ var CONFIG = {
   MOVEMENT_SOURCE: {
     RECEIVING: 'RECEIVING',
     PENYIAPAN: 'PENYIAPAN',
-    STOCK_OPNAME: 'STOCK_OPNAME'
+    STOCK_OPNAME: 'STOCK_OPNAME',
+    ADJUSTMENT: 'ADJUSTMENT'
+  },
+
+  // Peran user dari kolom USERS.peran (existing).
+  ROLE: {
+    OPERATOR: 'operator',
+    ADMIN: 'admin'
   },
 
   AKTIF: 'YA',

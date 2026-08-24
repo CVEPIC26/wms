@@ -45,3 +45,13 @@ function requireVerifiedUser_(email) {
   }
   return user;
 }
+
+/**
+ * Mengembalikan true jika user memiliki peran admin (CONFIG.ROLE.ADMIN).
+ * Dipakai untuk jejak audit/pemisahan tugas — bukan sistem permission
+ * yang kompleks.
+ */
+function isAdminUser_(email) {
+  var user = findUserByEmail_(email);
+  return !!user && user.peran.toLowerCase() === CONFIG.ROLE.ADMIN.toLowerCase();
+}
