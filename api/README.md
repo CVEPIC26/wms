@@ -35,7 +35,8 @@ Semua endpoint memakai satu URL Web App dengan parameter `action`
 | GET | `master_sku` | Membaca seluruh MASTER_SKU |
 | GET | `users` | Membaca seluruh USERS |
 | POST | `receiving_create` | Membuat RECEIVING (DRAFT) + RECEIVING_DETAIL |
-| POST | `receiving_submit` | Verifikasi + finalisasi → STOCK_IN |
+| POST | `receiving_submit` | DRAFT → MENUNGGU_VERIFIKASI |
+| POST | `receiving_verify` | MENUNGGU_VERIFIKASI → TERVERIFIKASI + STOCK_IN |
 
 ## Contoh Request
 
@@ -78,6 +79,21 @@ Content-Type: application/json
   "user_email": "<email-user@domain.id>"
 }
 ```
+Mengubah status `DRAFT → MENUNGGU_VERIFIKASI`. Tidak menyentuh
+STOCK maupun STOCK_MOVEMENT.
+
+### POST receiving_verify
+```
+POST {WEB_APP_URL}?action=receiving_verify
+Content-Type: application/json
+
+{
+  "receiving_id": "RCV-20260819-001",
+  "user_email": "<email-user@domain.id>"
+}
+```
+Mengubah status `MENUNGGU_VERIFIKASI → TERVERIFIKASI` lalu memproses
+STOCK_IN. Hanya proses ini yang menghasilkan STOCK_IN.
 
 ## Contoh Response
 
@@ -118,7 +134,12 @@ Content-Type: application/json
 - `qty_diterima_qc = qty_diterima - qty_reject` (dihitung server).
 - `alasan_reject` wajib jika `qty_reject > 0`.
 - `nama_produk` detail selalu dari MASTER_SKU.
-- `receiving_submit` menolak receiving tanpa detail / ID tidak dikenal.
+- `receiving_submit` hanya menerima status `DRAFT`; menolak receiving
+  tanpa detail / ID tidak dikenal.
+- `receiving_verify` hanya menerima status `MENUNGGU_VERIFIKASI`;
+  receiving `TERVERIFIKASI` mengembalikan sukses idempotent.
+- `receiving_create` memvalidasi seluruh input sebelum menulis; satu
+  detail invalid → tidak ada baris yang ditulis sama sekali.
 
 ## Status Receiving
 
@@ -126,18 +147,23 @@ Content-Type: application/json
 DRAFT → MENUNGGU_VERIFIKASI → TERVERIFIKASI
 ```
 
-Hanya receiving `TERVERIFIKASI` yang menghasilkan STOCK_IN.
+Transisi yang valid:
+- `DRAFT → MENUNGGU_VERIFIKASI` hanya via `receiving_submit`.
+- `MENUNGGU_VERIFIKASI → TERVERIFIKASI` hanya via `receiving_verify`.
+- `DRAFT → TERVERIFIKASI` langsung **ditolak** (`INVALID_STATUS`).
+- STOCK_IN hanya terjadi pada `receiving_verify`; tidak pernah pada
+  `receiving_create` maupun `receiving_submit`.
 
 ## Mekanisme Anti-Double-Stock
 
 1. **Idempotency per SKU** — sebelum membuat movement, sistem memeriksa
    `STOCK_MOVEMENT` untuk kombinasi `source=RECEIVING` +
    `source_id=receiving_id` + `sku`. Jika sudah ada, SKU dilewati.
-2. **Status idempotent** — `receiving_submit` pada receiving yang sudah
+2. **Status idempotent** — `receiving_verify` pada receiving yang sudah
    `TERVERIFIKASI` langsung mengembalikan sukses tanpa memproses ulang.
-3. **LockService** — seluruh proses finalisasi dibungkus
-   `LockService.getScriptLock()` sehingga dua request bersamaan tidak
-   menyebabkan double stock.
+3. **LockService** — seluruh proses `receiving_verify` (perubahan status
+   + movement + stock) dibungkus `LockService.getScriptLock()` sehingga
+   dua request bersamaan tidak menyebabkan double stock.
 4. **qty_diterima_qc = 0** tidak membuat movement.
 5. `STOCK_MOVEMENT` bersifat **append-only**; `STOCK` hanya diubah
    oleh sistem melalui transaksi.
@@ -152,6 +178,7 @@ Hanya receiving `TERVERIFIKASI` yang menghasilkan STOCK_IN.
 | `USER_NOT_FOUND` | Email tidak terdaftar di USERS |
 | `USER_INACTIVE` | User nonaktif |
 | `RECEIVING_NOT_FOUND` | receiving_id tidak ditemukan |
+| `INVALID_STATUS` | Transisi status tidak valid (misal verify saat masih DRAFT) |
 | `LOCK_TIMEOUT` | Gagal mendapatkan lock (sistem sibuk) |
 | `UNKNOWN_ACTION` | Parameter action tidak dikenal |
 | `INTERNAL_ERROR` | Error tak terduga (dicatat via Logger.log) |

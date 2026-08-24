@@ -2,9 +2,13 @@
  * ReceivingService.gs
  * Logika transaksi RECEIVING + QC dan STOCK_IN.
  *
- * Alur status: DRAFT → MENUNGGU_VERIFIKASI → TERVERIFIKASI
- * STOCK_IN hanya dibuat saat receiving menjadi TERVERIFIKASI,
- * dengan idempotency per SKU + LockService.
+ * Alur status FINAL:
+ *   DRAFT → MENUNGGU_VERIFIKASI → TERVERIFIKASI → STOCK_IN
+ *
+ * - receiving_create : membuat DRAFT (tidak menyentuh STOCK/MOVEMENT)
+ * - receiving_submit : DRAFT → MENUNGGU_VERIFIKASI (tidak menyentuh STOCK/MOVEMENT)
+ * - receiving_verify : MENUNGGU_VERIFIKASI → TERVERIFIKASI + STOCK_IN
+ *                      (idempotency per SKU + LockService)
  */
 
 function nextReceivingId_() {
@@ -20,9 +24,13 @@ function nextReceivingId_() {
  *   { sku, qty_diterima, qty_reject, alasan_reject, catatan }, ... ] }
  *
  * Membuat header RECEIVING (status DRAFT) + baris RECEIVING_DETAIL.
+ * Seluruh input divalidasi SEBELUM menulis ke spreadsheet; jika satu
+ * detail invalid, tidak ada baris RECEIVING/RECEIVING_DETAIL yang ditulis.
  * nama_produk diambil dari MASTER_SKU (bukan dipercaya dari client).
+ * Tidak membuat STOCK_MOVEMENT dan tidak mengubah STOCK.
  */
 function receivingCreate_(payload) {
+  // --- Tahap 1: validasi seluruh input (belum menulis apa pun) ---
   var tanggal = optionalString_(payload.tanggal) || todayDate_();
   var supplier = requireString_(payload.supplier, 'supplier');
   var nomorPo = requireString_(payload.nomor_po, 'nomor_po');
@@ -34,28 +42,75 @@ function receivingCreate_(payload) {
     details.push(validateReceivingItem_(items[i], i));
   }
 
-  var receivingId = nextReceivingId_();
-  var createdAt = nowDatetime_();
-
-  getSheet_(CONFIG.SHEETS.RECEIVING).appendRow([
-    receivingId, tanggal, supplier, nomorPo, user.email,
-    CONFIG.STATUS.DRAFT, createdAt
-  ]);
-
-  var detailSheet = getSheet_(CONFIG.SHEETS.RECEIVING_DETAIL);
-  for (var j = 0; j < details.length; j++) {
-    var d = details[j];
-    detailSheet.appendRow([
-      receivingId, d.sku, d.nama_produk, d.qty_diterima,
-      d.qty_reject, d.qty_diterima_qc, d.alasan_reject, d.catatan
-    ]);
+  // --- Tahap 2: penulisan atomik di dalam lock ---
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(30000)) {
+    throw validationError_('Sistem sibuk, coba lagi beberapa saat', 'LOCK_TIMEOUT');
   }
 
-  return {
-    receiving_id: receivingId,
-    status: CONFIG.STATUS.DRAFT,
-    jumlah_item: details.length
-  };
+  var receivingRow = null;
+  var detailRowCount = 0;
+  try {
+    var receivingId = nextReceivingId_();
+    var createdAt = nowDatetime_();
+
+    var receivingSheet = getSheet_(CONFIG.SHEETS.RECEIVING);
+    receivingSheet.appendRow([
+      receivingId, tanggal, supplier, nomorPo, user.email,
+      CONFIG.STATUS.DRAFT, createdAt
+    ]);
+    receivingRow = receivingSheet.getLastRow();
+
+    // Tulis seluruh detail sekaligus (bukan append per baris).
+    var detailRows = [];
+    for (var j = 0; j < details.length; j++) {
+      var d = details[j];
+      detailRows.push([
+        receivingId, d.sku, d.nama_produk, d.qty_diterima,
+        d.qty_reject, d.qty_diterima_qc, d.alasan_reject, d.catatan
+      ]);
+    }
+    var detailSheet = getSheet_(CONFIG.SHEETS.RECEIVING_DETAIL);
+    var detailStartRow = detailSheet.getLastRow() + 1;
+    detailSheet
+      .getRange(detailStartRow, 1, detailRows.length, detailRows[0].length)
+      .setValues(detailRows);
+    detailRowCount = detailRows.length;
+
+    return {
+      receiving_id: receivingId,
+      status: CONFIG.STATUS.DRAFT,
+      jumlah_item: details.length
+    };
+  } catch (err) {
+    Logger.log('receivingCreate_ error: ' + err.message);
+    rollbackReceivingCreate_(receivingRow, detailRowCount);
+    throw err;
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/**
+ * Rollback aman untuk receiving_create yang gagal di tengah penulisan.
+ * Hanya menghapus baris yang baru saja ditulis oleh proses ini —
+ * tidak menyentuh baris transaksi lain. Jika rollback gagal, cukup
+ * dicatat agar bisa dibersihkan manual.
+ */
+function rollbackReceivingCreate_(receivingRow, detailRowCount) {
+  try {
+    if (receivingRow) {
+      getSheet_(CONFIG.SHEETS.RECEIVING).deleteRow(receivingRow);
+    }
+    if (detailRowCount > 0) {
+      var detailSheet = getSheet_(CONFIG.SHEETS.RECEIVING_DETAIL);
+      var lastRow = detailSheet.getLastRow();
+      detailSheet.deleteRows(lastRow - detailRowCount + 1, detailRowCount);
+    }
+  } catch (rollbackErr) {
+    Logger.log('rollbackReceivingCreate_ gagal, perlu pembersihan manual: ' +
+      rollbackErr.message);
+  }
 }
 
 /**
@@ -128,12 +183,9 @@ function getReceivingDetails_(receivingId) {
  * POST action=receiving_submit
  * Body: { receiving_id, user_email }
  *
- * Menyelesaikan RECEIVING + QC:
- * DRAFT/MENUNGGU_VERIFIKASI → TERVERIFIKASI, lalu STOCK_IN.
- *
- * Anti-double-stock:
- * - LockService mencegah dua request bersamaan.
- * - Idempotency: skip SKU yang movement-nya sudah ada.
+ * Mengajukan receiving untuk diverifikasi:
+ * DRAFT → MENUNGGU_VERIFIKASI.
+ * TIDAK membuat STOCK_MOVEMENT dan TIDAK mengubah STOCK.
  */
 function receivingSubmit_(payload) {
   var receivingId = requireString_(payload.receiving_id, 'receiving_id');
@@ -149,19 +201,83 @@ function receivingSubmit_(payload) {
     if (!receiving) {
       throw validationError_('Receiving tidak ditemukan: ' + receivingId, 'RECEIVING_NOT_FOUND');
     }
-    if (receiving.status === CONFIG.STATUS.TERVERIFIKASI) {
-      // Sudah diproses — kembalikan sukses idempotent tanpa memproses ulang.
-      return {
-        receiving_id: receivingId,
-        status: CONFIG.STATUS.TERVERIFIKASI,
-        sudah_diproses: true
-      };
+    if (receiving.status !== CONFIG.STATUS.DRAFT) {
+      throw validationError_(
+        'Hanya receiving berstatus DRAFT yang dapat disubmit. Status saat ini: ' +
+        receiving.status, 'INVALID_STATUS');
     }
 
     var details = getReceivingDetails_(receivingId);
     if (details.length === 0) {
       throw validationError_('Receiving tidak memiliki detail: ' + receivingId, 'VALIDATION_ERROR');
     }
+
+    // DRAFT → MENUNGGU_VERIFIKASI (kolom 6 = status).
+    getSheet_(CONFIG.SHEETS.RECEIVING)
+      .getRange(receiving.row, 6)
+      .setValue(CONFIG.STATUS.MENUNGGU_VERIFIKASI);
+
+    return {
+      receiving_id: receivingId,
+      status: CONFIG.STATUS.MENUNGGU_VERIFIKASI,
+      disubmit_oleh: user.email
+    };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/**
+ * POST action=receiving_verify
+ * Body: { receiving_id, user_email }
+ *
+ * Verifikasi receiving: MENUNGGU_VERIFIKASI → TERVERIFIKASI,
+ * lalu memproses STOCK_IN.
+ * STOCK_IN hanya terjadi pada proses ini.
+ *
+ * Anti-double-stock:
+ * - LockService membungkus seluruh perubahan status + movement + stock.
+ * - Idempotency per SKU: skip SKU yang movement-nya sudah ada.
+ * - Receiving yang sudah TERVERIFIKASI mengembalikan sukses idempotent
+ *   tanpa memproses ulang.
+ */
+function receivingVerify_(payload) {
+  var receivingId = requireString_(payload.receiving_id, 'receiving_id');
+  var user = requireVerifiedUser_(payload.user_email);
+
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(30000)) {
+    throw validationError_('Sistem sibuk, coba lagi beberapa saat', 'LOCK_TIMEOUT');
+  }
+
+  try {
+    var receiving = findReceiving_(receivingId);
+    if (!receiving) {
+      throw validationError_('Receiving tidak ditemukan: ' + receivingId, 'RECEIVING_NOT_FOUND');
+    }
+    if (receiving.status === CONFIG.STATUS.TERVERIFIKASI) {
+      // Sudah diproses — sukses idempotent tanpa memproses ulang.
+      return {
+        receiving_id: receivingId,
+        status: CONFIG.STATUS.TERVERIFIKASI,
+        sudah_diproses: true
+      };
+    }
+    if (receiving.status !== CONFIG.STATUS.MENUNGGU_VERIFIKASI) {
+      throw validationError_(
+        'Hanya receiving berstatus MENUNGGU_VERIFIKASI yang dapat diverifikasi. ' +
+        'Status saat ini: ' + receiving.status, 'INVALID_STATUS');
+    }
+
+    var details = getReceivingDetails_(receivingId);
+    if (details.length === 0) {
+      throw validationError_('Receiving tidak memiliki detail: ' + receivingId, 'VALIDATION_ERROR');
+    }
+
+    // MENUNGGU_VERIFIKASI → TERVERIFIKASI (kolom 6 = status).
+    getSheet_(CONFIG.SHEETS.RECEIVING)
+      .getRange(receiving.row, 6)
+      .setValue(CONFIG.STATUS.TERVERIFIKASI);
 
     var movementsCreated = 0;
     var movementsSkipped = 0;
@@ -194,11 +310,6 @@ function receivingSubmit_(payload) {
       addStock_(d.sku, d.nama_produk, d.qty_diterima_qc);
       movementsCreated++;
     }
-
-    // Update status menjadi TERVERIFIKASI (kolom 6 = status).
-    getSheet_(CONFIG.SHEETS.RECEIVING)
-      .getRange(receiving.row, 6)
-      .setValue(CONFIG.STATUS.TERVERIFIKASI);
 
     return {
       receiving_id: receivingId,

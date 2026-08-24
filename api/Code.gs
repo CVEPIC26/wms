@@ -6,8 +6,9 @@
  * Endpoint yang tersedia (tahap RECEIVING + QC + STOCK IN):
  *   GET  /exec?action=master_sku
  *   GET  /exec?action=users
- *   POST /exec?action=receiving_create
- *   POST /exec?action=receiving_submit
+ *   POST /exec?action=receiving_create  (buat DRAFT)
+ *   POST /exec?action=receiving_submit  (DRAFT → MENUNGGU_VERIFIKASI)
+ *   POST /exec?action=receiving_verify  (MENUNGGU_VERIFIKASI → TERVERIFIKASI + STOCK_IN)
  */
 
 function doGet(e) {
@@ -35,7 +36,9 @@ function doPost(e) {
       case 'receiving_create':
         return successResponse_('Receiving dibuat (DRAFT)', receivingCreate_(payload));
       case 'receiving_submit':
-        return successResponse_('Receiving terverifikasi, STOCK_IN diproses', receivingSubmit_(payload));
+        return successResponse_('Receiving disubmit, menunggu verifikasi', receivingSubmit_(payload));
+      case 'receiving_verify':
+        return successResponse_('Receiving terverifikasi, STOCK_IN diproses', receivingVerify_(payload));
       default:
         return errorResponse_('Action tidak dikenal: ' + action, 'UNKNOWN_ACTION');
     }
