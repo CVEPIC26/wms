@@ -15,6 +15,7 @@
  *   GET  /exec?action=opname_list                       (daftar opname)
  *   GET  /exec?action=adjustment_get&adjustment_id=...  (satu adjustment + audit)
  *   GET  /exec?action=adjustment_list                   (daftar adjustment)
+ *   GET  /exec?action=dashboard_summary&user_email=...  (agregasi dashboard, READ-ONLY)
  *   POST /exec?action=receiving_create  (buat DRAFT)
  *   POST /exec?action=receiving_submit  (DRAFT → MENUNGGU_VERIFIKASI)
  *   POST /exec?action=receiving_verify  (MENUNGGU_VERIFIKASI → TERVERIFIKASI + STOCK_IN)
@@ -74,6 +75,9 @@ function doGet(e) {
         return successResponse_('Detail adjustment', adjustmentGet_(e.parameter.adjustment_id));
       case 'adjustment_list':
         return successResponse_('Daftar adjustment', { items: adjustmentList_() });
+      case 'dashboard_summary':
+        requireVerifiedUser_(e.parameter.user_email);
+        return successResponse_('Ringkasan dashboard', getDashboardData_());
       default:
         return errorResponse_('Action tidak dikenal: ' + action, 'UNKNOWN_ACTION');
     }
