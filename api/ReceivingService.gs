@@ -180,6 +180,51 @@ function getReceivingDetails_(receivingId) {
 }
 
 /**
+ * GET action=receiving_list
+ * Daftar seluruh receiving (header saja), READ-ONLY.
+ */
+function receivingList_() {
+  var sheet = getSheet_(CONFIG.SHEETS.RECEIVING);
+  var values = sheet.getDataRange().getValues();
+  var result = [];
+  for (var i = 1; i < values.length; i++) {
+    var id = String(values[i][0]).trim();
+    if (id === '') continue;
+    result.push({
+      receiving_id: id,
+      tanggal: values[i][1],
+      supplier: String(values[i][2]).trim(),
+      nomor_po: String(values[i][3]).trim(),
+      user_email: String(values[i][4]).trim(),
+      status: String(values[i][5]).trim(),
+      created_at: values[i][6]
+    });
+  }
+  return result;
+}
+
+/**
+ * GET action=receiving_get&receiving_id=...
+ * Satu receiving: header + seluruh detail, READ-ONLY.
+ */
+function receivingGet_(receivingId) {
+  receivingId = requireString_(receivingId, 'receiving_id');
+  var receiving = findReceiving_(receivingId);
+  if (!receiving) {
+    throw validationError_('Receiving tidak ditemukan: ' + receivingId, 'RECEIVING_NOT_FOUND');
+  }
+  return {
+    receiving_id: receiving.receiving_id,
+    tanggal: receiving.tanggal,
+    supplier: receiving.supplier,
+    nomor_po: receiving.nomor_po,
+    user_email: receiving.user_email,
+    status: receiving.status,
+    items: getReceivingDetails_(receivingId)
+  };
+}
+
+/**
  * POST action=receiving_submit
  * Body: { receiving_id, user_email }
  *

@@ -13,6 +13,8 @@
  *   GET  /exec?action=opname_sku&opname_id=...&sku=...  (lookup SKU untuk scan)
  *   GET  /exec?action=opname_get&opname_id=...          (header + detail opname)
  *   GET  /exec?action=opname_list                       (daftar opname)
+ *   GET  /exec?action=receiving_list                    (daftar receiving)
+ *   GET  /exec?action=receiving_get&receiving_id=...    (header + detail receiving)
  *   GET  /exec?action=adjustment_get&adjustment_id=...  (satu adjustment + audit)
  *   GET  /exec?action=adjustment_list                   (daftar adjustment)
  *   GET  /exec?action=dashboard_summary&user_email=...  (agregasi dashboard, READ-ONLY)
@@ -71,6 +73,10 @@ function doGet(e) {
         return successResponse_('Detail opname', opnameGet_(e.parameter.opname_id));
       case 'opname_list':
         return successResponse_('Daftar opname', { items: opnameList_() });
+      case 'receiving_list':
+        return successResponse_('Daftar receiving', { items: receivingList_() });
+      case 'receiving_get':
+        return successResponse_('Detail receiving', receivingGet_(e.parameter.receiving_id));
       case 'adjustment_get':
         return successResponse_('Detail adjustment', adjustmentGet_(e.parameter.adjustment_id));
       case 'adjustment_list':

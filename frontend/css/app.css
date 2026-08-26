@@ -262,3 +262,77 @@ table.data td.num {
     display: block;
   }
 }
+
+/* ---------- Form & Button (Receiving) ---------- */
+.btn {
+  background-color: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.55rem 1rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.btn:hover { opacity: 0.92; }
+
+.btn-secondary {
+  background-color: #e5e7eb;
+  color: var(--text);
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem;
+}
+
+.form-grid label {
+  font-size: 0.8rem;
+  color: var(--muted);
+  display: block;
+}
+
+.form-grid input {
+  width: 100%;
+  margin-top: 0.25rem;
+  padding: 0.45rem 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.form-grid input[readonly] {
+  background-color: #f3f4f6;
+  color: var(--text);
+}
+
+.item-row {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.75rem;
+  margin-bottom: 0.75rem;
+  background-color: #fbfcfd;
+}
+
+.item-grid {
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+.item-msg { margin-top: 0.4rem; }
+.item-msg .state { padding: 0.35rem 0; text-align: left; }
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 0.75rem;
+}
+
+.detail-label {
+  font-size: 0.72rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+#detail-action { margin-top: 1rem; }
