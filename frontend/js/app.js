@@ -1,26 +1,45 @@
-// WMS - CV Edukasi Pratama Insan Cemerlang
-// Tahap awal: navigasi antar modul saja. Logika bisnis (Receiving+QC,
-// Stock Opname, verifikasi email, koneksi API) diimplementasikan nanti.
+// Bootstrap aplikasi WMS: inisialisasi user, sidebar, dan routing.
 
 (function () {
   'use strict';
 
-  var navLinks = document.querySelectorAll('.app-nav a');
-  var modules = document.querySelectorAll('.module');
+  function initCurrentUser() {
+    var el = document.getElementById('current-user');
+    el.textContent = APP_CONFIG.USER_EMAIL
+      ? APP_CONFIG.USER_EMAIL
+      : 'User belum dikonfigurasi (js/config.js)';
+  }
 
-  function showModule(name) {
-    modules.forEach(function (module) {
-      module.classList.toggle('active', module.id === 'module-' + name);
+  function initSidebarToggle() {
+    var sidebar = document.getElementById('sidebar');
+    var backdrop = document.getElementById('sidebar-backdrop');
+    document.getElementById('menu-toggle').addEventListener('click', function () {
+      sidebar.classList.toggle('open');
+      backdrop.classList.toggle('show');
     });
-    navLinks.forEach(function (link) {
-      link.classList.toggle('active', link.dataset.module === name);
+    backdrop.addEventListener('click', function () {
+      sidebar.classList.remove('open');
+      backdrop.classList.remove('show');
     });
   }
 
-  navLinks.forEach(function (link) {
-    link.addEventListener('click', function (event) {
-      event.preventDefault();
-      showModule(link.dataset.module);
-    });
-  });
+  function registerRoutes() {
+    Router.register('/dashboard', DashboardPage.render);
+
+    // Placeholder untuk modul yang sedang dibangun: halaman statis,
+    // tidak ada pemanggilan API maupun data dummy.
+    ['/receiving', '/stock', '/loading', '/opname', '/adjustment']
+      .forEach(function (path) {
+        Router.register(path, function () { /* halaman placeholder */ });
+      });
+  }
+
+  function start() {
+    initCurrentUser();
+    initSidebarToggle();
+    registerRoutes();
+    Router.start();
+  }
+
+  document.addEventListener('DOMContentLoaded', start);
 })();

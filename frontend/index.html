@@ -4,56 +4,82 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>WMS - CV Edukasi Pratama Insan Cemerlang</title>
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
-  <header class="app-header">
-    <h1>Warehouse Management System</h1>
-    <p class="app-subtitle">CV Edukasi Pratama Insan Cemerlang</p>
-  </header>
+  <div class="layout">
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">WMS</div>
+      <nav>
+        <ul>
+          <li><a href="#/dashboard">Dashboard</a></li>
+          <li><a href="#/receiving">Receiving</a></li>
+          <li><a href="#/stock">Stock</a></li>
+          <li><a href="#/loading">Loading</a></li>
+          <li><a href="#/opname">Stock Opname</a></li>
+          <li><a href="#/adjustment">Adjustment</a></li>
+        </ul>
+      </nav>
+    </aside>
+    <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
 
-  <nav class="app-nav">
-    <ul>
-      <li><a href="#" data-module="dashboard" class="active">Dashboard</a></li>
-      <li><a href="#" data-module="receiving">Receiving + QC</a></li>
-      <li><a href="#" data-module="persediaan">Persediaan</a></li>
-      <li><a href="#" data-module="stock-keluar">Stock Keluar</a></li>
-      <li><a href="#" data-module="stock-opname">Stock Opname</a></li>
-    </ul>
-  </nav>
+    <!-- MAIN -->
+    <div class="main">
+      <header class="topbar">
+        <button class="menu-toggle" id="menu-toggle" aria-label="Menu">&#9776;</button>
+        <span class="app-name">WMS</span>
+        <span class="spacer"></span>
+        <span class="current-user" id="current-user"></span>
+      </header>
 
-  <main class="app-main">
-    <section id="module-dashboard" class="module active">
-      <h2>Dashboard</h2>
-      <p>Ringkasan operasional gudang akan ditampilkan di sini.</p>
-    </section>
+      <main class="content">
+        <!-- DASHBOARD -->
+        <section id="page-dashboard" class="page">
+          <h1>Dashboard</h1>
+          <div class="cards" id="dashboard-cards"></div>
 
-    <section id="module-receiving" class="module">
-      <h2>Receiving + QC</h2>
-      <p>Modul penerimaan barang dari supplier sekaligus pemeriksaan QC ringan (scan/input SKU, pencatatan qty, qty reject, dan qty lolos QC sebagai stock in).</p>
-      <!-- Form scan/input SKU dan pencatatan qty akan diimplementasikan pada tahap berikutnya -->
-    </section>
+          <div class="section">
+            <h2>Stock Summary</h2>
+            <div id="dashboard-stock"></div>
+          </div>
 
-    <section id="module-persediaan" class="module">
-      <h2>Persediaan</h2>
-      <p>Tampilan stock persediaan hasil stock in (qty lolos QC) dikurangi stock keluar.</p>
-    </section>
+          <div class="section">
+            <h2>Recent Movement</h2>
+            <div id="dashboard-movements"></div>
+          </div>
+        </section>
 
-    <section id="module-stock-keluar" class="module">
-      <h2>Stock Keluar / Pemesanan</h2>
-      <p>Stock keluar bersumber dari data penyiapan di Google Spreadsheet (bukan input via Web App). Loading/penyiapan tidak mengurangi stock lagi.</p>
-    </section>
+        <!-- Placeholder modul lain (sedang dibangun) -->
+        <section id="page-receiving" class="page">
+          <h1>Receiving</h1>
+          <div class="section"><div class="state">Modul Receiving sedang dibangun.</div></div>
+        </section>
+        <section id="page-stock" class="page">
+          <h1>Stock</h1>
+          <div class="section"><div class="state">Modul Stock sedang dibangun.</div></div>
+        </section>
+        <section id="page-loading" class="page">
+          <h1>Loading</h1>
+          <div class="section"><div class="state">Modul Loading sedang dibangun.</div></div>
+        </section>
+        <section id="page-opname" class="page">
+          <h1>Stock Opname</h1>
+          <div class="section"><div class="state">Modul Stock Opname sedang dibangun.</div></div>
+        </section>
+        <section id="page-adjustment" class="page">
+          <h1>Adjustment</h1>
+          <div class="section"><div class="state">Modul Adjustment sedang dibangun.</div></div>
+        </section>
+      </main>
+    </div>
+  </div>
 
-    <section id="module-stock-opname" class="module">
-      <h2>Stock Opname</h2>
-      <p>Modul stock opname dengan scan/input SKU akan diimplementasikan pada tahap berikutnya.</p>
-    </section>
-  </main>
-
-  <footer class="app-footer">
-    <p>&copy; CV Edukasi Pratama Insan Cemerlang</p>
-  </footer>
-
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/router.js"></script>
+  <script src="js/dashboard.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>
