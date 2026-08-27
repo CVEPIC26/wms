@@ -8,7 +8,7 @@ var APP_CONFIG = {
 
   // URL Web App Google Apps Script (akhiri dengan /exec).
   // Isi dengan URL deployment backend Anda.
-  API_BASE_URL: 'https://script.google.com/macros/s/AKfycbxyWZmT39hA-JOOjKxZ0zK053JNKy3rNLqq_DB9vsykXMSKdS_GMPeSOqGw0DXuSkmbMw/exec',
+  API_BASE_URL: 'https://script.google.com/macros/s/AKfycbywp9D14kXpUfjvWqcslOmNo9Xe439DqvTZK08-bb2RE7vK5U8cetbHFr3jOC_qxij28g/exec',
 
   // Email user aktif. Backend memvalidasi terhadap sheet USERS.
   // Sementara diisi manual; jangan hardcode di file lain.
