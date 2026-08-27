@@ -386,3 +386,40 @@ th.sortable:hover {
   background-color: #fef9c3;
   color: #854d0e;
 }
+
+/* ---------- Stock Opname Scanner ---------- */
+.scanner-box {
+  border: 2px solid var(--accent);
+  background-color: #f0f6ff;
+}
+
+.scanner-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.scan-input {
+  flex: 1;
+  font-size: 1.1rem;
+  padding: 0.7rem 0.75rem;
+  border: 2px solid var(--navy);
+  border-radius: 8px;
+}
+
+.scan-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.scan-form {
+  margin-top: 0.75rem;
+  border-top: 1px solid var(--border);
+  padding-top: 0.75rem;
+}
+
+@media (max-width: 768px) {
+  .scan-input {
+    font-size: 1.2rem;
+    padding: 0.8rem;
+  }
+}
