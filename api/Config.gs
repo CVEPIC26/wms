@@ -93,9 +93,44 @@ function getSpreadsheet_() {
 function getSheet_(sheetName) {
   var sheet = getSpreadsheet_().getSheetByName(sheetName);
   if (!sheet) {
-    throw new Error('Sheet tidak ditemukan: ' + sheetName);
+    throw new Error('Sheet tidak ditemukan: ' + sheetName +
+      '. Pastikan sheet ada di spreadsheet database (lihat docs/deployment-guide.md).');
   }
   return sheet;
+}
+
+/**
+ * Validasi struktur database: memastikan seluruh sheet yang diperlukan
+ * ada dan baris header-nya persis sesuai CONFIG.HEADERS.
+ * Melempar error berisi daftar masalah jika ada yang tidak sesuai.
+ * READ-ONLY — tidak mengubah data. Dipakai oleh action health_check.
+ */
+function validateDatabaseStructure_() {
+  var problems = [];
+  var ss = getSpreadsheet_();
+
+  for (var key in CONFIG.SHEETS) {
+    var sheetName = CONFIG.SHEETS[key];
+    var expected = CONFIG.HEADERS[key];
+    var sheet = ss.getSheetByName(sheetName);
+
+    if (!sheet) {
+      problems.push('Sheet hilang: ' + sheetName);
+      continue;
+    }
+    if (!expected) continue;
+
+    var actual = sheet.getRange(1, 1, 1, expected.length).getValues()[0];
+    for (var c = 0; c < expected.length; c++) {
+      if (String(actual[c]).trim() !== expected[c]) {
+        problems.push('Header ' + sheetName + ' kolom ' + (c + 1) +
+          ': diharapkan "' + expected[c] + '", ditemukan "' +
+          String(actual[c]).trim() + '"');
+      }
+    }
+  }
+
+  return problems;
 }
 
 function nowDatetime_() {

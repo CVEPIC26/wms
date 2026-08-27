@@ -7,6 +7,7 @@
  *   GET  /exec?action=master_sku
  *   GET  /exec?action=users
  *   GET  /exec?action=user_me&user_email=...  (info current user)
+ *   GET  /exec?action=health_check            (validasi struktur sheet, READ-ONLY)
  *   GET  /exec?action=stock_get&sku=...    (saldo satu SKU)
  *   GET  /exec?action=stock_list           (seluruh saldo STOCK)
  *   GET  /exec?action=stock_card&sku=...   (kartu stok / histori movement SKU)
@@ -49,6 +50,16 @@ function doGet(e) {
           peran: me.peran,
           status_aktif: me.status_aktif
         });
+      }
+      case 'health_check': {
+        var problems = validateDatabaseStructure_();
+        if (problems.length > 0) {
+          return successResponse_('Struktur database bermasalah', {
+            valid: false,
+            problems: problems
+          });
+        }
+        return successResponse_('Struktur database valid', { valid: true, problems: [] });
       }
       case 'stock_get': {
         var skuGet = requireString_(e.parameter.sku, 'sku');
