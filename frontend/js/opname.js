@@ -27,6 +27,7 @@ var OpnamePage = (function () {
   /* ---------------- LIST ---------------- */
 
   function renderList() {
+    saving = false;
     var root = document.getElementById('page-opname');
     root.innerHTML =
       '<h1>Stock Opname</h1>' +
@@ -98,7 +99,11 @@ var OpnamePage = (function () {
   }
 
   function submitCreate() {
+    if (saving) return;
+    saving = true;
     var msg = document.getElementById('create-opname-msg');
+    var btn = document.getElementById('btn-create');
+    if (btn) btn.disabled = true;
     var payload = {
       tanggal: document.getElementById('o-tanggal').value || undefined,
       lokasi: document.getElementById('o-lokasi').value.trim(),
@@ -113,12 +118,15 @@ var OpnamePage = (function () {
       .catch(function (err) {
         console.error('opname_create error:', err);
         msg.innerHTML = '<div class="state error">' + Ui.escapeHtml(err.message || 'Gagal membuat opname') + '</div>';
+        if (btn) btn.disabled = false;
+        saving = false;
       });
   }
 
   /* ---------------- DETAIL ---------------- */
 
   function renderDetail(idParam) {
+    saving = false;
     var opnameId = decodeURIComponent(idParam);
     var root = document.getElementById('page-opname');
     root.innerHTML =
@@ -416,16 +424,26 @@ var OpnamePage = (function () {
       showOpnameMsg('Minimal satu detail diperlukan.', true);
       return;
     }
+    if (saving) return;
+    saving = true;
+    var submitBtn = document.getElementById('btn-submit');
+    if (submitBtn) submitBtn.disabled = true;
     showOpnameMsg('Mengirim untuk verifikasi...');
     ApiClient.post('opname_submit', { opname_id: opnameId, user_email: userEmail() })
       .then(function () { renderDetail(encodeURIComponent(opnameId)); })
       .catch(function (err) {
         console.error('opname_submit error:', err);
         showOpnameMsg(err.message || 'Submit gagal.', true);
+        if (submitBtn) submitBtn.disabled = false;
+        saving = false;
       });
   }
 
   function doVerify(opnameId) {
+    if (saving) return;
+    saving = true;
+    var verifyBtn = document.getElementById('btn-verify');
+    if (verifyBtn) verifyBtn.disabled = true;
     showOpnameMsg('Memverifikasi...');
     ApiClient.post('opname_verify', { opname_id: opnameId, user_email: userEmail() })
       .then(function (data) {
@@ -440,6 +458,8 @@ var OpnamePage = (function () {
       .catch(function (err) {
         console.error('opname_verify error:', err);
         showOpnameMsg(err.message || 'Verifikasi gagal.', true);
+        if (verifyBtn) verifyBtn.disabled = false;
+        saving = false;
       });
   }
 

@@ -6,6 +6,7 @@ var ReceivingPage = (function () {
   'use strict';
 
   var items = []; // item form create: { sku, nama_produk, qty_diterima, qty_reject, alasan_reject, catatan }
+  var busy = false; // anti double-click pada transaksi
 
   function userEmail() {
     return APP_CONFIG.USER_EMAIL;
@@ -18,6 +19,7 @@ var ReceivingPage = (function () {
   /* ---------------- LIST ---------------- */
 
   function renderList() {
+    busy = false;
     var root = document.getElementById('page-receiving');
     root.innerHTML =
       '<h1>Receiving</h1>' +
@@ -65,6 +67,7 @@ var ReceivingPage = (function () {
   /* ---------------- CREATE ---------------- */
 
   function renderCreate() {
+    busy = false;
     items = [];
     var root = document.getElementById('page-receiving');
     root.innerHTML =
@@ -231,6 +234,7 @@ var ReceivingPage = (function () {
   }
 
   function submitCreate() {
+    if (busy) return;
     var msg = document.getElementById('create-msg');
     var error = validateForm();
     if (error) {
@@ -254,6 +258,9 @@ var ReceivingPage = (function () {
       })
     };
 
+    busy = true;
+    var btn = document.getElementById('btn-save');
+    if (btn) btn.disabled = true;
     msg.innerHTML = '<div class="state">Menyimpan receiving...</div>';
     ApiClient.post('receiving_create', payload)
       .then(function (data) {
@@ -264,12 +271,15 @@ var ReceivingPage = (function () {
       .catch(function (err) {
         console.error('receiving_create error:', err);
         msg.innerHTML = '<div class="state error">' + Ui.escapeHtml(err.message || 'Gagal menyimpan') + '</div>';
+        if (btn) btn.disabled = false;
+        busy = false;
       });
   }
 
   /* ---------------- DETAIL ---------------- */
 
   function renderDetail(receivingId) {
+    busy = false;
     var root = document.getElementById('page-receiving');
     root.innerHTML =
       '<h1>Detail Receiving</h1>' +
@@ -340,7 +350,11 @@ var ReceivingPage = (function () {
   }
 
   function doAction(action, payload, loadingMsg, receivingId) {
+    if (busy) return;
+    busy = true;
     var msg = document.getElementById('detail-msg');
+    var btn = document.querySelector('#detail-action .btn');
+    if (btn) btn.disabled = true;
     msg.innerHTML = '<div class="state">' + Ui.escapeHtml(loadingMsg) + '</div>';
 
     ApiClient.post(action, payload)
@@ -359,6 +373,8 @@ var ReceivingPage = (function () {
       .catch(function (err) {
         console.error(action + ' error:', err);
         msg.innerHTML = '<div class="state error">' + Ui.escapeHtml(err.message || 'Aksi gagal') + '</div>';
+        if (btn) btn.disabled = false;
+        busy = false;
       });
   }
 
