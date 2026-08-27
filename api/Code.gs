@@ -155,12 +155,21 @@ function doPost(e) {
 }
 
 function parsePostBody_(e) {
-  if (!e || !e.postBody || !e.postBody.contents) {
+  // Google Apps Script mengenkapsulasi body POST di e.postData.contents
+  // (bukan e.postBody). Menggunakan e.postBody akan selalu menganggap
+  // body kosong sehingga doPost gagal dengan 'Body request kosong'.
+  var raw = (e && e.postData && e.postData.contents) || '';
+  if (typeof raw !== 'string' || raw.trim() === '') {
     throw validationError_('Body request kosong', 'VALIDATION_ERROR');
   }
   try {
-    return JSON.parse(e.postBody.contents);
+    var parsed = JSON.parse(raw);
+    if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      throw validationError_('Body request harus berupa objek JSON', 'VALIDATION_ERROR');
+    }
+    return parsed;
   } catch (err) {
+    if (err && err.code === 'VALIDATION_ERROR') throw err;
     throw validationError_('Body request bukan JSON valid', 'VALIDATION_ERROR');
   }
 }

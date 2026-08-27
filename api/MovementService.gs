@@ -66,7 +66,17 @@ function createMovement_(movement) {
 
 function nextMovementId_() {
   var sheet = getSheet_(CONFIG.SHEETS.STOCK_MOVEMENT);
-  var count = sheet.getLastRow(); // header + data
-  var seq = ('0000' + count).slice(-4);
-  return 'MV-' + Utilities.formatDate(new Date(), 'Asia/Jakarta', 'yyyyMMdd') + '-' + seq;
+  var values = sheet.getDataRange().getValues();
+  var datePrefix = Utilities.formatDate(new Date(), 'Asia/Jakarta', 'yyyyMMdd');
+  var currentMax = 0;
+  // Nomor urut terbesar hari ini → ID unik meski row pernah dihapus.
+  for (var i = 1; i < values.length; i++) {
+    var id = String(values[i][0]).trim();
+    var prefix = 'MV-' + datePrefix + '-';
+    if (id.indexOf(prefix) === 0) {
+      var num = parseInt(id.slice(prefix.length), 10);
+      if (!isNaN(num) && num > currentMax) currentMax = num;
+    }
+  }
+  return 'MV-' + datePrefix + '-' + ('0000' + (currentMax + 1)).slice(-4);
 }

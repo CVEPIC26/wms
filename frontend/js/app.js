@@ -51,24 +51,41 @@
     }
   }
 
+  function hideSplash() {
+    var splash = document.getElementById('splash');
+    if (splash) splash.classList.add('hidden');
+  }
+
   function start() {
     initSidebarToggle();
     registerRoutes();
 
-    // Bootstrap: muat current user SEKALI sebelum merender route.
+    // Bootstrap: muat current user SEKALI sebelum merender route,
+    // sekaligus pastikan splash tampil minimal beberapa saat (tidak terasa
+    // "blink" pada koneksi cepat) tetapi tidak memperlambat loading secara
+    // nyata — splash hanya menutup transisi bootstrap.
+    var splashStart = Date.now();
+    var MIN_SPLASH = 1100; // ms
+
     UserService.loadCurrentUser()
       .then(function () {
         initCurrentUser();
         if (!UserService.isActive()) {
           showBootError('User tidak aktif.');
+          setTimeout(hideSplash, MIN_SPLASH);
           return;
         }
         Router.start();
+        // Fade-out splash setelah render pertama selesai, dengan durasi
+        // minimum agar tidak berkedip.
+        var elapsed = Date.now() - splashStart;
+        setTimeout(hideSplash, Math.max(0, MIN_SPLASH - elapsed));
       })
       .catch(function (err) {
         console.error('Bootstrap user error:', err);
         initCurrentUser();
         showBootError(err.message || 'Tidak dapat memverifikasi user.');
+        setTimeout(hideSplash, MIN_SPLASH);
       });
   }
 

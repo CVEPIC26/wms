@@ -14,7 +14,7 @@ var OpnamePage = (function () {
   }
 
   function statusBadge(status) {
-    return '<span class="badge">' + Ui.escapeHtml(Ui.displayValue(status)) + '</span>';
+    return Ui.statusBadge(status);
   }
 
   function diffLabel(v) {

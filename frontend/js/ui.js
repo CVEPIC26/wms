@@ -30,8 +30,22 @@ var Ui = (function () {
   }
 
   function setState(container, type, message) {
-    var className = 'state' + (type === 'error' ? ' error' : '');
+    var className = 'state';
+    if (type === 'error') className += ' error';
+    else if (type === 'success') className += ' success';
+    else if (type === 'loading') className += ' loading';
     container.innerHTML = '<div class="' + className + '">' + escapeHtml(message) + '</div>';
+  }
+
+  // Badge status terpusat. Mendukung status transaksi WMS dan tipe movement.
+  // Mengembalikan string HTML badge yang aman (status di-escape).
+  function statusBadge(status) {
+    var s = displayValue(status);
+    var cls = 'badge';
+    if (/^TERVERIFIKASI$/i.test(s) || /^DISETUJUI$/i.test(s)) cls += ' badge-done';
+    else if (/^MENUNGGU_VERIFIKASI$/i.test(s)) cls += ' badge-waiting';
+    else if (/^DRAFT$/i.test(s)) cls += ' badge-draft';
+    return '<span class="' + cls + '">' + escapeHtml(s) + '</span>';
   }
 
   function showLoading(container, message) {
@@ -75,6 +89,7 @@ var Ui = (function () {
     formatNumber: formatNumber,
     displayValue: displayValue,
     escapeHtml: escapeHtml,
+    statusBadge: statusBadge,
     showLoading: showLoading,
     showError: showError,
     showEmpty: showEmpty,

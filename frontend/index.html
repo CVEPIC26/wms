@@ -2,23 +2,47 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#17412e">
+  <meta name="description" content="WMS - Warehouse Management System CV Edukasi Pratama Insan Cemerlang">
   <title>WMS - CV Edukasi Pratama Insan Cemerlang</title>
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
   <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
+  <!-- SPLASH SCREEN -->
+  <div class="splash" id="splash" aria-hidden="true">
+    <div class="splash-logo"><img src="assets/logo.svg" alt="Logo"></div>
+    <div class="splash-title">WMS</div>
+    <div class="splash-subtitle">Warehouse Management System</div>
+    <div class="splash-loader"></div>
+  </div>
+
   <div class="layout">
     <!-- SIDEBAR -->
     <aside class="sidebar" id="sidebar">
-      <div class="brand">WMS</div>
-      <nav>
+      <div class="brand">
+        <div class="brand-logo"><img src="assets/logo.svg" alt="Logo"></div>
+        <div>
+          <div class="brand-name">WMS</div>
+          <div class="brand-sub">CV Edukasi Pratama Insan Cemerlang</div>
+        </div>
+      </div>
+      <nav id="sidebar-nav" aria-label="Navigasi utama">
+        <div class="nav-group">Menu Utama</div>
         <ul>
-          <li><a href="#/dashboard">Dashboard</a></li>
-          <li><a href="#/receiving">Receiving</a></li>
-          <li><a href="#/stock">Stock</a></li>
-          <li><a href="#/loading">Loading</a></li>
-          <li><a href="#/opname">Stock Opname</a></li>
-          <li><a href="#/adjustment">Adjustment</a></li>
+          <li><a href="#/dashboard" data-route="/dashboard"><span class="nav-ico">&#9632;</span> Home</a></li>
+        </ul>
+        <div class="nav-group">Operasional</div>
+        <ul>
+          <li><a href="#/receiving" data-route="/receiving"><span class="nav-ico">&#8615;</span> Receiving</a></li>
+          <li><a href="#/loading" data-route="/loading"><span class="nav-ico">&#10140;</span> Penyiapan</a></li>
+          <li><a href="#/opname" data-route="/opname"><span class="nav-ico">&#9745;</span> Stock Opname</a></li>
+        </ul>
+        <div class="nav-group">Inventory</div>
+        <ul>
+          <li><a href="#/stock" data-route="/stock"><span class="nav-ico">&#9783;</span> Stock</a></li>
+          <li><a href="#/adjustment" data-route="/adjustment"><span class="nav-ico">&#8645;</span> Adjustment</a></li>
         </ul>
       </nav>
     </aside>
@@ -27,42 +51,19 @@
     <!-- MAIN -->
     <div class="main">
       <header class="topbar">
-        <button class="menu-toggle" id="menu-toggle" aria-label="Menu">&#9776;</button>
+        <button class="menu-toggle" id="menu-toggle" aria-label="Buka menu">&#9776;</button>
+        <span class="topbar-logo"><img src="assets/logo.svg" alt="Logo"></span>
         <span class="app-name">WMS</span>
         <span class="spacer"></span>
         <span class="current-user" id="current-user"></span>
       </header>
 
       <main class="content">
-        <!-- DASHBOARD -->
-        <section id="page-dashboard" class="page">
-          <h1>Dashboard</h1>
-          <div class="cards" id="dashboard-cards"></div>
-
-          <div class="section">
-            <h2>Stock Summary</h2>
-            <div id="dashboard-stock"></div>
-          </div>
-
-          <div class="section">
-            <h2>Recent Movement</h2>
-            <div id="dashboard-movements"></div>
-          </div>
-        </section>
-
-        <!-- RECEIVING (konten diisi dinamis oleh js/receiving.js) -->
+        <section id="page-dashboard" class="page"></section>
         <section id="page-receiving" class="page"></section>
-
-        <!-- STOCK (konten diisi dinamis oleh js/stock.js) -->
         <section id="page-stock" class="page"></section>
-
-        <!-- LOADING (konten diisi dinamis oleh js/loading.js) -->
         <section id="page-loading" class="page"></section>
-
-        <!-- STOCK OPNAME (konten diisi dinamis oleh js/opname.js) -->
         <section id="page-opname" class="page"></section>
-
-        <!-- ADJUSTMENT (konten diisi dinamis oleh js/adjustment.js) -->
         <section id="page-adjustment" class="page"></section>
       </main>
     </div>

@@ -13,9 +13,20 @@
 
 function nextReceivingId_() {
   var sheet = getSheet_(CONFIG.SHEETS.RECEIVING);
-  var count = sheet.getLastRow();
-  var seq = ('000' + count).slice(-3);
-  return 'RCV-' + Utilities.formatDate(new Date(), 'Asia/Jakarta', 'yyyyMMdd') + '-' + seq;
+  var values = sheet.getDataRange().getValues();
+  var datePrefix = Utilities.formatDate(new Date(), 'Asia/Jakarta', 'yyyyMMdd');
+  var currentMax = 0;
+  // Hitung nomor urut terbesar yang sudah dipakai hari ini untuk
+  // menghasilkan ID unik meskipun baris lama pernah dihapus.
+  for (var i = 1; i < values.length; i++) {
+    var id = String(values[i][0]).trim();
+    var prefix = 'RCV-' + datePrefix + '-';
+    if (id.indexOf(prefix) === 0) {
+      var num = parseInt(id.slice(prefix.length), 10);
+      if (!isNaN(num) && num > currentMax) currentMax = num;
+    }
+  }
+  return 'RCV-' + datePrefix + '-' + ('000' + (currentMax + 1)).slice(-3);
 }
 
 /**
