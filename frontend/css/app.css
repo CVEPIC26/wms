@@ -1,6 +1,6 @@
 /* ============================================================
    WMS - CV Edukasi Pratama Insan Cemerlang
-   Design system: merah-oranye (primary) + hijau gelap (dark/sidebar)
+   Design system: merah-oranye (primary) + oranye gelap (dark/sidebar)
    Mobile-first, light, warehouse-operation friendly.
    ============================================================ */
 
@@ -13,15 +13,15 @@
   --color-primary-light: #fdeaec;
   --color-primary-soft: #fbe4e0;
   --color-secondary: #ffffff;
-  --color-dark: #17412e;
-  --color-dark-2: #0f3022;
+  --color-dark: #8a2a0e;
+  --color-dark-2: #5d1a07;
   --color-background: #f5f6f7;
   --color-surface: #ffffff;
   --color-border: #e3e7eb;
   --color-text: #1c2530;
   --color-text-muted: #667085;
-  --color-success: #1e7e4c;
-  --color-success-bg: #e7f6ec;
+  --color-success: #8a3b12;
+  --color-success-bg: #f6e3d3;
   --color-warning: #b9761a;
   --color-warning-bg: #fdf3e0;
   --color-danger: #c7422f;
@@ -119,7 +119,7 @@ a:hover { text-decoration: underline; }
 .sidebar {
   width: var(--sidebar-w);
   background-color: var(--color-dark);
-  color: #cfe0d6;
+  color: #f2c9b0;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
@@ -167,7 +167,7 @@ a:hover { text-decoration: underline; }
   align-items: center;
   gap: 0.7rem;
   padding: 0.72rem 1.15rem;
-  color: #cfe0d6;
+  color: #f2c9b0;
   text-decoration: none;
   font-size: 0.92rem;
   border-left: 3px solid transparent;
@@ -494,7 +494,7 @@ th.sortable:hover { color: var(--color-dark); }
     display: none;
     position: fixed;
     inset: 0;
-    background: rgba(15,25,20,0.45);
+    background: rgba(70,24,8,0.45);
     z-index: 50;
   }
   .sidebar-backdrop.show { display: block; }
