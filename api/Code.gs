@@ -6,6 +6,7 @@
  * Endpoint yang tersedia (tahap RECEIVING + QC + STOCK IN + STOCK CORE):
  *   GET  /exec?action=master_sku
  *   GET  /exec?action=users
+ *   GET  /exec?action=user_me&user_email=...  (info current user)
  *   GET  /exec?action=stock_get&sku=...    (saldo satu SKU)
  *   GET  /exec?action=stock_list           (seluruh saldo STOCK)
  *   GET  /exec?action=stock_card&sku=...   (kartu stok / histori movement SKU)
@@ -40,6 +41,15 @@ function doGet(e) {
         return successResponse_('Daftar master SKU', { items: getAllMasterSku_() });
       case 'users':
         return successResponse_('Daftar users', { items: getAllUsers_() });
+      case 'user_me': {
+        var me = requireVerifiedUser_(e.parameter.user_email);
+        return successResponse_('User aktif', {
+          email: me.email,
+          nama: me.nama,
+          peran: me.peran,
+          status_aktif: me.status_aktif
+        });
+      }
       case 'stock_get': {
         var skuGet = requireString_(e.parameter.sku, 'sku');
         var stock = getStockBySku_(skuGet);

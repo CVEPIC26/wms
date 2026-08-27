@@ -5,9 +5,15 @@
 
   function initCurrentUser() {
     var el = document.getElementById('current-user');
-    el.textContent = APP_CONFIG.USER_EMAIL
-      ? APP_CONFIG.USER_EMAIL
-      : 'User belum dikonfigurasi (js/config.js)';
+    var u = AppState.currentUser;
+    if (u) {
+      el.innerHTML =
+        '<span class="user-name">' + Ui.escapeHtml(UserService.getDisplayName()) + '</span>' +
+        '<span class="user-meta">' + Ui.escapeHtml(u.email || '-') + ' · ' +
+        Ui.escapeHtml(UserService.getRole()) + '</span>';
+    } else {
+      el.textContent = AppState.userError || 'User tidak tersedia';
+    }
   }
 
   function initSidebarToggle() {
@@ -37,11 +43,33 @@
     Router.register('/adjustment/:id', AdjustmentPage.renderDetail);
   }
 
+  function showBootError(message) {
+    var content = document.querySelector('.content');
+    if (content) {
+      content.innerHTML = '<div class="section"><div class="state error">' +
+        Ui.escapeHtml(message) + '</div></div>';
+    }
+  }
+
   function start() {
-    initCurrentUser();
     initSidebarToggle();
     registerRoutes();
-    Router.start();
+
+    // Bootstrap: muat current user SEKALI sebelum merender route.
+    UserService.loadCurrentUser()
+      .then(function () {
+        initCurrentUser();
+        if (!UserService.isActive()) {
+          showBootError('User tidak aktif.');
+          return;
+        }
+        Router.start();
+      })
+      .catch(function (err) {
+        console.error('Bootstrap user error:', err);
+        initCurrentUser();
+        showBootError(err.message || 'Tidak dapat memverifikasi user.');
+      });
   }
 
   document.addEventListener('DOMContentLoaded', start);

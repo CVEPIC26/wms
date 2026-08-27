@@ -112,6 +112,19 @@ body {
 .topbar .current-user {
   font-size: 0.85rem;
   color: var(--muted);
+  text-align: right;
+  line-height: 1.2;
+}
+
+.topbar .current-user .user-name {
+  display: block;
+  font-weight: 600;
+  color: var(--navy);
+}
+
+.topbar .current-user .user-meta {
+  display: block;
+  font-size: 0.78rem;
 }
 
 .content {
