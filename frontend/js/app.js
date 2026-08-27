@@ -29,10 +29,12 @@
     Router.register('/receiving/:id', ReceivingPage.renderDetail);
     Router.register('/stock', StockPage.renderList);
     Router.register('/stock/:sku', StockPage.renderDetail);
+    Router.register('/loading', LoadingPage.renderList);
+    Router.register('/loading/:id', LoadingPage.renderDetail);
 
     // Placeholder untuk modul yang sedang dibangun: halaman statis,
     // tidak ada pemanggilan API maupun data dummy.
-    ['/loading', '/opname', '/adjustment']
+    ['/opname', '/adjustment']
       .forEach(function (path) {
         Router.register(path, function () { /* halaman placeholder */ });
       });
