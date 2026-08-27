@@ -12,5 +12,5 @@ var APP_CONFIG = {
 
   // Email user aktif. Backend memvalidasi terhadap sheet USERS.
   // Sementara diisi manual; jangan hardcode di file lain.
-  USER_EMAIL: 'putrawidnyana70@gmail.com'
+  USER_EMAIL: 'pratamainsanc@gmail.com'
 };
