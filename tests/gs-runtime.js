@@ -44,8 +44,9 @@ class MockSheet {
 }
 
 class MockSpreadsheet {
-  constructor(sheets) {
+  constructor(sheets, id) {
     this.sheetMap = new Map();
+    this._id = id || null;
     for (const [name, rows] of Object.entries(sheets)) {
       this.sheetMap.set(name, new MockSheet(name, rows));
     }
@@ -55,7 +56,18 @@ class MockSpreadsheet {
 
 const GAS = {
   SpreadsheetApp: {
-    openById(id) { return this._ss; },
+    openById(id) {
+      // Spreadsheet eksternal (mis. PENYIAPAN) terdaftar di this._ext {id: spreadSheet}.
+      if (this._ext && Object.prototype.hasOwnProperty.call(this._ext, id)) {
+        return this._ext[id];
+      }
+      // ID spreadsheet database utama (jika CONFIG.SPREADSHEET_ID diisi).
+      if (String(id) && this._ss && this._ss._id === String(id)) {
+        return this._ss;
+      }
+      // ID tidak dikenal → simulasikan spreadsheet tidak ditemukan.
+      throw new Error('Spreadsheet tidak ditemukan dengan ID: ' + id);
+    },
     getActiveSpreadsheet() { return this._ss; }
   },
   ContentService: {
@@ -94,7 +106,8 @@ function loadGs(apiDir) {
   const files = [
     'Config.gs', 'Response.gs', 'Validation.gs',
     'MasterSkuService.gs', 'UserService.gs', 'MovementService.gs',
-    'StockService.gs', 'ReceivingService.gs', 'Code.gs'
+    'StockService.gs', 'ReceivingService.gs', 'PreparationService.gs',
+    'PenyiapanService.gs', 'Code.gs'
   ];
   let src = '';
   for (const f of files) {

@@ -20,6 +20,7 @@
  *   GET  /exec?action=adjustment_get&adjustment_id=...  (satu adjustment + audit)
  *   GET  /exec?action=adjustment_list                   (daftar adjustment)
  *   GET  /exec?action=dashboard_summary&user_email=...  (agregasi dashboard, READ-ONLY)
+ *   GET  /exec?action=penyiapan         (baca spreadsheet eksternal PENYIAPAN, READ-ONLY)
  *   POST /exec?action=receiving_create  (buat DRAFT)
  *   POST /exec?action=receiving_submit  (DRAFT → MENUNGGU_VERIFIKASI)
  *   POST /exec?action=receiving_verify  (MENUNGGU_VERIFIKASI → TERVERIFIKASI + STOCK_IN)
@@ -105,12 +106,21 @@ function doGet(e) {
       case 'dashboard_summary':
         requireVerifiedUser_(e.parameter.user_email);
         return successResponse_('Ringkasan dashboard', getDashboardData_());
+      case 'penyiapan':
+        // READ-ONLY reader spreadsheet eksternal PENYIAPAN.
+        return successResponse_('Data penyiapan eksternal', readPenyiapan_());
       default:
         return errorResponse_('Action tidak dikenal: ' + action, 'UNKNOWN_ACTION');
     }
   } catch (err) {
     Logger.log('doGet error [' + action + ']: ' + err.message);
-    return errorResponse_(err.message, err.code || 'INTERNAL_ERROR');
+    var code = err.code || 'INTERNAL_ERROR';
+    // Spreadsheet eksternal PENYIAPAN tidak dapat ditemukan/diakses
+    // saat openById melempar error tanpa code spesifik.
+    if (action === 'penyiapan' && !err.code) {
+      code = 'PENYIAPAN_SPREADSHEET_NOT_FOUND';
+    }
+    return errorResponse_(err.message, code);
   }
 }
 

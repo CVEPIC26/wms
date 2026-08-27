@@ -5,8 +5,10 @@ Spreadsheet sebagai database (8 sheet sesuai
 [../docs/database.md](../docs/database.md) dan
 [../docs/google-sheets-setup.md](../docs/google-sheets-setup.md)).
 
-**Scope tahap ini (5A):** hanya RECEIVING + QC + STOCK IN.
-Belum ada endpoint Stock Opname, Stock Out, maupun integrasi PENYIAPAN.
+**Scope tahap saat ini:** RECEIVING + QC + STOCK IN (selesai), modul
+STOCK / STOCK_OPNAME / STOCK_ADJUSTMENT / Dashboard, plus **reader
+read-only sheet PENYIAPAN eksternal** (`GET ?action=penyiapan`, tahap
+integrasi - belum memproses STOCK_OUT dari source tersebut).
 
 ## Struktur File
 
@@ -21,6 +23,8 @@ Belum ada endpoint Stock Opname, Stock Out, maupun integrasi PENYIAPAN.
 | `ReceivingService.gs` | Logika RECEIVING + QC, finalisasi, STOCK_IN |
 | `StockService.gs` | Update saldo STOCK (hanya oleh sistem) |
 | `MovementService.gs` | Append STOCK_MOVEMENT + cek idempotency |
+| `PreparationService.gs` | Integrasi PENYIAPAN → STOCK_OUT (tahap integrasi) |
+| `PenyiapanService.gs` | **READ-ONLY** pembaca sheet PENYIAPAN eksternal |
 
 > Seluruh file ditempatkan dalam satu project Apps Script; semua
 > fungsi/global berbagi scope yang sama (perilaku standar Apps Script).
@@ -34,6 +38,7 @@ Semua endpoint memakai satu URL Web App dengan parameter `action`
 |--------|--------|--------|
 | GET | `master_sku` | Membaca seluruh MASTER_SKU |
 | GET | `users` | Membaca seluruh USERS |
+| GET | `penyiapan` | **READ-ONLY** baca spreadsheet eksternal PENYIAPAN (tahap integrasi) |
 | POST | `receiving_create` | Membuat RECEIVING (DRAFT) + RECEIVING_DETAIL |
 | POST | `receiving_submit` | DRAFT → MENUNGGU_VERIFIKASI |
 | POST | `receiving_verify` | MENUNGGU_VERIFIKASI → TERVERIFIKASI + STOCK_IN |
@@ -44,6 +49,15 @@ Semua endpoint memakai satu URL Web App dengan parameter `action`
 ```
 GET {WEB_APP_URL}?action=master_sku
 ```
+
+### GET penyiapan (READ-ONLY, spreadsheet eksternal PENYIAPAN)
+```
+GET {WEB_APP_URL}?action=penyiapan
+```
+Membaca sheet `PENYIAPAN` dari spreadsheet eksternal yang ditunjuk
+`CONFIG.EXTERNAL_SPREADSHEET_ID`. **Hanya baca** - tidak mengubah STOCK,
+STOCK_MOVEMENT, maupun spreadsheet PENYIAPAN itu sendiri. `tipe_modul`
+tidak di-map ke SKU pada tahap ini.
 
 ### POST receiving_create
 ```

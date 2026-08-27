@@ -80,7 +80,35 @@ var CONFIG = {
     // Nilai status yang berarti siap diproses (dibandingkan
     // case-insensitive). Hanya dipakai jika kolom status ada.
     STATUS_SIAP: ['SIAP', 'READY', 'MENUNGGU']
-  }
+  },
+
+  // ============================================================
+  // Spreadsheet eksternal PENYIAPAN (read-only reader).
+  // Terpisah dari database WMS (CONFIG.SPREADSHEET_ID) dan dari
+  // struktur STOCK_OUT (CONFIG.PENYIAPAN) yang sudah ada di atas.
+  // Endpoint GET ?action=penyiapan HANYA membaca spreadsheet ini.
+  // Nilai ID diisi oleh user (placeholder 'ISI_NANTI').
+  // ============================================================
+  EXTERNAL_SPREADSHEET_ID: 'ISI_NANTI',
+
+  EXTERNAL_SHEETS: {
+    PENYIAPAN: 'PENYIAPAN'
+  },
+
+  // Kontrak header aktual sheet PENYIAPAN eksternal.
+  // Urutan tidak wajib sama — validasi mencocokkan berdasarkan nama.
+  EXTERNAL_PENYIAPAN_HEADERS: [
+    'Tanggal',
+    'Nomor PO',
+    'Outlet',
+    'Tipe Modul',
+    'Kuantitas',
+    'Total Harga (Rp)',
+    'Helper',
+    'Status',
+    'Keterangan',
+    'Pengambilan'
+  ]
 };
 
 function getSpreadsheet_() {
